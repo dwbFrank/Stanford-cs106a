@@ -67,10 +67,6 @@ public class Breakout extends GraphicsProgram {
 		setSize(APPLICATION_WIDTH, APPLICATION_HEIGHT);
 		setupGame();
 
-		addMouseListeners();
-
-		add(ball, ballOrigin());
-
 		while (!isGameOver()) {
 			moveBall();
 			if (isBouncedSide()) {
@@ -81,6 +77,7 @@ public class Breakout extends GraphicsProgram {
 			}
 			checkCollisions();
 			pause(ballSpeed);
+			speedUp();
 		}
 
 	}
@@ -90,9 +87,7 @@ public class Breakout extends GraphicsProgram {
 	 */
 	private void setupGame() {
 		// Initialize bricks
-		GPoint bricksOrigin = bricksOrigin();
-		bricks = new GBricks(NBRICK_ROWS, NBRICKS_PER_ROW, BRICK_WIDTH, BRICK_HEIGHT, BRICK_SEP, bricksOrigin);
-		add(bricks);
+		initBricks();
 
 		// Initialize paddle
 		GPoint paddleOrigin = paddleOrigin();
@@ -100,23 +95,63 @@ public class Breakout extends GraphicsProgram {
 		add(paddle);
 
 		// Initialize ball
-		GPoint ballOrigin = paddleOrigin();
-		ball = makeBall(ballOrigin);
+		initBall();
+		addMouseListeners();
+	}
+
+	
+	private void initBall() {
+		ball = new GOval(BALL_RADIUS * 2, BALL_RADIUS * 2);
+		ball.setFillColor(Color.BLACK);
+		ball.setFilled(true);
 		ballSpeed = BALL_SPEED;
 		vx = rgen.nextDouble(1.0, 3.0);
 		if (rgen.nextBoolean(0.5))
 			vx = -vx;
 		vy = 3.0;
-		add(ball);
-
+		GPoint ballOrigin = ballOrigin();
+		add(ball, ballOrigin);
 	}
 
-	private GOval makeBall(GPoint origin) {
-		GOval ball = new GOval(BALL_RADIUS * 2, BALL_RADIUS * 2);
-		ball.setFillColor(Color.BLACK);
-		ball.setFilled(true);
-		ball.setLocation(origin);
-		return ball;
+	private void initBricks() {
+		int rowWidth = NBRICKS_PER_ROW * BRICK_WIDTH + (NBRICKS_PER_ROW - 1) * BRICK_SEP;
+		int x = (APPLICATION_WIDTH - rowWidth) / 2;
+		int y = BRICK_Y_OFFSET;
+		int rowsPerColor = NBRICK_ROWS / 5;
+		Color rowColor = Color.RED;
+		nBricks = NBRICKS_PER_ROW * NBRICK_ROWS;
+		
+		for (int i = 1; i <= NBRICK_ROWS; i++) {
+			for (int j = 0; j < NBRICKS_PER_ROW; j++) {
+				GRect brick = new GRect(x, y, BRICK_WIDTH, BRICK_HEIGHT);
+				brick.setFillColor(rowColor);
+				brick.setFilled(true);
+				add(brick, x, y);
+				x += (BRICK_WIDTH + BRICK_SEP);
+			}
+			boolean isChange = (i % rowsPerColor) == 0;
+			rowColor = nextRowColor(rowColor, isChange);
+			x = (APPLICATION_WIDTH - rowWidth) / 2;
+			y += (BRICK_HEIGHT + BRICK_SEP);
+		}
+	}
+
+	private Color nextRowColor(Color currentColor, boolean isChange) {
+		if (isChange) {
+			if (currentColor == Color.RED) {
+				return Color.ORANGE;
+			} else if (currentColor == Color.ORANGE) {
+				return Color.YELLOW;
+			} else if (currentColor == Color.YELLOW) {
+				return Color.GREEN;
+			} else if (currentColor == Color.GREEN) {
+				return Color.CYAN;
+			} else {
+				return Color.RED;
+			}
+		} else {
+			return currentColor;
+		}
 	}
 
 	/**
@@ -124,11 +159,11 @@ public class Breakout extends GraphicsProgram {
 	 * 
 	 * @return Central location for bricks framework
 	 */
-	private GPoint bricksOrigin() {
-		int brickRowWidth = NBRICKS_PER_ROW * BRICK_WIDTH + (NBRICKS_PER_ROW - 1) * BRICK_SEP;
-
-		return new GPoint((APPLICATION_WIDTH - brickRowWidth) / 2, BRICK_Y_OFFSET);
-	}
+	// private GPoint bricksOrigin() {
+	// int brickRowWidth = ;
+	//
+	// return new GPoint((APPLICATION_WIDTH - brickRowWidth) / 2, BRICK_Y_OFFSET);
+	// }
 
 	/**
 	 * Creates a GPoint object of central location for paddle.
@@ -170,11 +205,15 @@ public class Breakout extends GraphicsProgram {
 	 */
 	private void checkCollisions() {
 		GObject collider = getCollidingObject();
-		if (collider == paddle) {
-			bounceVer();
-		} else if (collider == bricks) {
-			remove(bricks);
-		}
+		if (collider != null) {
+			if(collider == paddle) {
+				bounceVer();
+			}else {
+				remove(collider);
+				nBricks--;
+				bounceVer();
+			}
+		} 
 	}
 
 	/**
@@ -265,13 +304,13 @@ public class Breakout extends GraphicsProgram {
 	 * Speed up the speed of the ball.
 	 */
 	private void speedUp() {
-		ballSpeed *= 1.01;
+		ballSpeed = ((double) nBricks / (NBRICKS_PER_ROW * NBRICK_ROWS)) * BALL_SPEED;
 	}
 
 	/* Private instance variables */
-	private GBricks bricks;
 	private GPaddle paddle;
 	private GOval ball;
+	private int nBricks;
 	/* Random number generator used to specifies origin point */
 	private RandomGenerator rgen = RandomGenerator.getInstance();
 	private double vx, vy; // The velocity of the ball

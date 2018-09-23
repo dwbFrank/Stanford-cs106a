@@ -56,15 +56,28 @@ public class Breakout extends GraphicsProgram {
 
 	/** Number of turns */
 	private static final int NTURNS = 3;
+	
+	/** Default speed of the ball */
+	private static final int BALL_SPEED = 10;
 
 	/* Method: run() */
 	/** Runs the Breakout program. */
 	public void run() {
 		/* You fill this in, along with any subsidiary methods */
 		setSize(APPLICATION_WIDTH, APPLICATION_HEIGHT);
-
 		setupGame();
 
+		addMouseListeners();
+
+		add(ball, ballOrigin());
+		
+		 while(!isGameOver()) {
+		
+		 moveBall();
+		 pause(ballSpeed);
+		 }
+		 GLabel test = new GLabel("Game Over");
+		 add(test, 20, 20);
 	}
 
 	/**
@@ -73,16 +86,21 @@ public class Breakout extends GraphicsProgram {
 	private void setupGame() {
 		// Initialize bricks
 		GPoint bricksOrigin = bricksOrigin();
-		GBricks bricks = new GBricks(NBRICK_ROWS, NBRICKS_PER_ROW, BRICK_WIDTH, BRICK_HEIGHT, BRICK_SEP, bricksOrigin);
-		add(bricks);
+		bricks = new GBricks(NBRICK_ROWS, NBRICKS_PER_ROW, BRICK_WIDTH, BRICK_HEIGHT, BRICK_SEP, bricksOrigin);
 
 		// Initialize paddle
 		GPoint paddleOrigin = paddleOrigin();
-		GPaddle paddle = new GPaddle(PADDLE_WIDTH, PADDLE_HEIGHT, Color.GREEN, paddleOrigin);
-		add(paddle);
+		paddle = new GPaddle(PADDLE_WIDTH, PADDLE_HEIGHT, Color.GREEN, paddleOrigin);
 
 		// Initialize ball
+		ball = new GBall(BALL_RADIUS * 2);
+		ballSpeed = BALL_SPEED;
+		drawBricksPaddle();
+	}
 
+	private void drawBricksPaddle() {
+		add(bricks);
+		add(paddle);
 	}
 
 	/**
@@ -107,5 +125,51 @@ public class Breakout extends GraphicsProgram {
 
 		return new GPoint(x, y);
 	}
+
+	/**
+	 * Creates a GPoint object of central location for bounce ball.
+	 */
+	private GPoint ballOrigin() {
+		int x = APPLICATION_WIDTH / 2;
+		int y = APPLICATION_HEIGHT / 2;
+		return new GPoint(x, y);
+	}
+
+	/**
+	 * Add mouse event for paddle. If mouse point is out of window width just set it
+	 * to window edge.
+	 */
+	public void mouseMoved(MouseEvent e) {
+		int x = e.getX();
+		if (x > (APPLICATION_WIDTH - PADDLE_WIDTH)) {
+			x = APPLICATION_WIDTH - PADDLE_WIDTH;
+		}
+
+		paddle.setLocation(x, paddle.getY());
+	}
+	
+	private void moveBall() {
+		ball.move(ball.getVx(), ball.getVy());
+	}
+
+	/**
+	 * If the position of the ball is out of the height of the application window
+	 * turn out game is over else not.
+	 * 
+	 * @return determine whether game is over.
+	 */
+	private boolean isGameOver() {
+		return ball.getY() >= APPLICATION_HEIGHT + BALL_RADIUS;
+	}
+	
+	private void speedUp() {
+		ballSpeed *= 1.01;
+	}
+
+	/* Private instance variables */
+	private GBricks bricks;
+	private GPaddle paddle;
+	private GBall ball;
+	private double ballSpeed;	// The speed of the bounce ball
 
 }

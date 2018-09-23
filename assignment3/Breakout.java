@@ -56,7 +56,7 @@ public class Breakout extends GraphicsProgram {
 
 	/** Number of turns */
 	private static final int NTURNS = 3;
-	
+
 	/** Default speed of the ball */
 	private static final int BALL_SPEED = 10;
 
@@ -70,14 +70,19 @@ public class Breakout extends GraphicsProgram {
 		addMouseListeners();
 
 		add(ball, ballOrigin());
-		
-		 while(!isGameOver()) {
-		
-		 moveBall();
-		 pause(ballSpeed);
-		 }
-		 GLabel test = new GLabel("Game Over");
-		 add(test, 20, 20);
+
+		while (!isGameOver()) {
+			moveBall();
+			if (isBouncedSide()) {
+				bounceHor();
+			}
+			if (isBouncedTop()) {
+				bounceVer();
+			}
+			checkCollisions();
+			pause(ballSpeed);
+		}
+
 	}
 
 	/**
@@ -87,20 +92,31 @@ public class Breakout extends GraphicsProgram {
 		// Initialize bricks
 		GPoint bricksOrigin = bricksOrigin();
 		bricks = new GBricks(NBRICK_ROWS, NBRICKS_PER_ROW, BRICK_WIDTH, BRICK_HEIGHT, BRICK_SEP, bricksOrigin);
+		add(bricks);
 
 		// Initialize paddle
 		GPoint paddleOrigin = paddleOrigin();
 		paddle = new GPaddle(PADDLE_WIDTH, PADDLE_HEIGHT, Color.GREEN, paddleOrigin);
+		add(paddle);
 
 		// Initialize ball
-		ball = new GBall(BALL_RADIUS * 2);
+		GPoint ballOrigin = paddleOrigin();
+		ball = makeBall(ballOrigin);
 		ballSpeed = BALL_SPEED;
-		drawBricksPaddle();
+		vx = rgen.nextDouble(1.0, 3.0);
+		if (rgen.nextBoolean(0.5))
+			vx = -vx;
+		vy = 3.0;
+		add(ball);
+
 	}
 
-	private void drawBricksPaddle() {
-		add(bricks);
-		add(paddle);
+	private GOval makeBall(GPoint origin) {
+		GOval ball = new GOval(BALL_RADIUS * 2, BALL_RADIUS * 2);
+		ball.setFillColor(Color.BLACK);
+		ball.setFilled(true);
+		ball.setLocation(origin);
+		return ball;
 	}
 
 	/**
@@ -130,8 +146,8 @@ public class Breakout extends GraphicsProgram {
 	 * Creates a GPoint object of central location for bounce ball.
 	 */
 	private GPoint ballOrigin() {
-		int x = APPLICATION_WIDTH / 2;
-		int y = APPLICATION_HEIGHT / 2;
+		double x = (APPLICATION_WIDTH - BALL_RADIUS * 2) / 2.0;
+		double y = (APPLICATION_HEIGHT - BALL_RADIUS * 2) / 2.0;
 		return new GPoint(x, y);
 	}
 
@@ -147,21 +163,107 @@ public class Breakout extends GraphicsProgram {
 
 		paddle.setLocation(x, paddle.getY());
 	}
-	
-	private void moveBall() {
-		ball.move(ball.getVx(), ball.getVy());
+
+	/**
+	 * If bounced object is paddle, than bounce the ball to upward. If bounced
+	 * object is brick, than remove it.
+	 */
+	private void checkCollisions() {
+		GObject collider = getCollidingObject();
+		if (collider == paddle) {
+			bounceVer();
+		} else if (collider == bricks) {
+			remove(bricks);
+		}
 	}
 
 	/**
-	 * If the position of the ball is out of the height of the application window
-	 * turn out game is over else not.
+	 * Retrieve the graphical object at bounced location.
+	 * 
+	 * @return
+	 */
+	private GObject getCollidingObject() {
+		GPoint leftTop = new GPoint(ball.getX(), ball.getY());
+		GPoint leftBot = new GPoint(ball.getX(), ball.getY() + BALL_RADIUS * 2);
+		GPoint rightTop = new GPoint(ball.getX() + BALL_RADIUS * 2, ball.getY());
+		GPoint rightBot = new GPoint(ball.getX() + BALL_RADIUS * 2, ball.getY() + BALL_RADIUS * 2);
+
+		if (getElementAt(leftTop) != null) {
+			return getElementAt(leftTop);
+		} else if (getElementAt(leftBot) != null) {
+			return getElementAt(leftBot);
+		} else if (getElementAt(rightTop) != null) {
+			return getElementAt(rightTop);
+		} else if (getElementAt(rightBot) != null) {
+			return getElementAt(rightBot);
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Move the ball to next location.
+	 */
+	private void moveBall() {
+		double x = vx;
+		double y = vy;
+		ball.move(x, y);
+	}
+
+	/**
+	 * If turns is minus 1 game is over.
 	 * 
 	 * @return determine whether game is over.
 	 */
 	private boolean isGameOver() {
-		return ball.getY() >= APPLICATION_HEIGHT + BALL_RADIUS;
+		return turns == -1 || isEndOfTurn();
 	}
-	
+
+	/**
+	 * If the ball bounced off the bottom wall, this turn is over.
+	 * 
+	 * @return determine whether turn is over or not.
+	 */
+	private boolean isEndOfTurn() {
+		return ball.getY() > paddle.getY();
+	}
+
+	/**
+	 * To see whether the coordinate of the ball of the right edge has become
+	 * greater than the width of the window. Or the left edge of the ball less than
+	 * or equals 0.
+	 * 
+	 * @return determine whether bounced off side edge or not.
+	 */
+	private boolean isBouncedSide() {
+		double x = ball.getX();
+
+		return (x <= 0) || (x + BALL_RADIUS * 2 >= APPLICATION_WIDTH);
+	}
+
+	private void bounceHor() {
+		vx = -vx;
+	}
+
+	/**
+	 * To see whether the coordinate of the ball of the bottom edge has become less
+	 * than or equals 0.
+	 * 
+	 * @return determine whether bounced off top edge or not.
+	 */
+	private boolean isBouncedTop() {
+		double y = ball.getY();
+
+		return y <= 0;
+	}
+
+	private void bounceVer() {
+		vy = -vy;
+	}
+
+	/**
+	 * Speed up the speed of the ball.
+	 */
 	private void speedUp() {
 		ballSpeed *= 1.01;
 	}
@@ -169,7 +271,10 @@ public class Breakout extends GraphicsProgram {
 	/* Private instance variables */
 	private GBricks bricks;
 	private GPaddle paddle;
-	private GBall ball;
-	private double ballSpeed;	// The speed of the bounce ball
-
+	private GOval ball;
+	/* Random number generator used to specifies origin point */
+	private RandomGenerator rgen = RandomGenerator.getInstance();
+	private double vx, vy; // The velocity of the ball
+	private double ballSpeed; // The speed of the bounce ball
+	private int turns = 3; // Turns of the game
 }

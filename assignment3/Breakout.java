@@ -11,8 +11,6 @@
 import acm.graphics.*;
 import acm.program.*;
 import acm.util.*;
-
-import java.applet.*;
 import java.awt.*;
 import java.awt.event.*;
 
@@ -59,6 +57,9 @@ public class Breakout extends GraphicsProgram {
 
 	/** Default speed of the ball */
 	private static final int BALL_SPEED = 10;
+	
+	/** Offset of the score board down from top */
+	private static final int SB_Y_OFFSET = 20;
 
 	/* Method: run() */
 	/** Runs the Breakout program. */
@@ -69,14 +70,23 @@ public class Breakout extends GraphicsProgram {
 
 		while (!isGameOver()) {
 			moveBall();
+
 			if (isBouncedSide()) {
 				bounceHor();
 			}
 			if (isBouncedTop()) {
 				bounceVer();
 			}
+			if (isEndOfTurn()) {
+				turns--;
+				scoreBoard.updateEntry2(turns +"");
+				remove(ball);
+				initBall();
+			}
 			checkCollisions();
+
 			pause(ballSpeed);
+
 			speedUp();
 		}
 
@@ -90,16 +100,18 @@ public class Breakout extends GraphicsProgram {
 		initBricks();
 
 		// Initialize paddle
-		GPoint paddleOrigin = paddleOrigin();
-		paddle = new GPaddle(PADDLE_WIDTH, PADDLE_HEIGHT, Color.GREEN, paddleOrigin);
-		add(paddle);
+		initPaddle();
 
 		// Initialize ball
 		initBall();
+		
+		// Initialize scoreBoard
+		initScoreBoard();
+
+		// Add event listeners
 		addMouseListeners();
 	}
 
-	
 	private void initBall() {
 		ball = new GOval(BALL_RADIUS * 2, BALL_RADIUS * 2);
 		ball.setFillColor(Color.BLACK);
@@ -120,7 +132,7 @@ public class Breakout extends GraphicsProgram {
 		int rowsPerColor = NBRICK_ROWS / 5;
 		Color rowColor = Color.RED;
 		nBricks = NBRICKS_PER_ROW * NBRICK_ROWS;
-		
+
 		for (int i = 1; i <= NBRICK_ROWS; i++) {
 			for (int j = 0; j < NBRICKS_PER_ROW; j++) {
 				GRect brick = new GRect(x, y, BRICK_WIDTH, BRICK_HEIGHT);
@@ -154,16 +166,18 @@ public class Breakout extends GraphicsProgram {
 		}
 	}
 
-	/**
-	 * Creates a GPoint object of central location for bricks framework.
-	 * 
-	 * @return Central location for bricks framework
-	 */
-	// private GPoint bricksOrigin() {
-	// int brickRowWidth = ;
-	//
-	// return new GPoint((APPLICATION_WIDTH - brickRowWidth) / 2, BRICK_Y_OFFSET);
-	// }
+	private void initPaddle() {
+		paddle = new GRect(PADDLE_WIDTH, PADDLE_HEIGHT);
+		paddle.setFillColor(Color.BLACK);
+		paddle.setFilled(true);
+		GPoint paddleOrigin = paddleOrigin();
+		add(paddle, paddleOrigin);
+	}
+
+	private void initScoreBoard() {
+		scoreBoard = new GBoard("Score", "Turns", score + "", turns + "");
+		add(scoreBoard, 20, SB_Y_OFFSET);
+	}
 
 	/**
 	 * Creates a GPoint object of central location for paddle.
@@ -206,14 +220,16 @@ public class Breakout extends GraphicsProgram {
 	private void checkCollisions() {
 		GObject collider = getCollidingObject();
 		if (collider != null) {
-			if(collider == paddle) {
+			if (collider == paddle) {
 				bounceVer();
-			}else {
+			} else if (collider != scoreBoard) {
+				score++;
 				remove(collider);
 				nBricks--;
+				scoreBoard.updateEntry1(score + "");
 				bounceVer();
 			}
-		} 
+		}
 	}
 
 	/**
@@ -255,7 +271,7 @@ public class Breakout extends GraphicsProgram {
 	 * @return determine whether game is over.
 	 */
 	private boolean isGameOver() {
-		return turns == -1 || isEndOfTurn();
+		return turns == 0;
 	}
 
 	/**
@@ -264,7 +280,7 @@ public class Breakout extends GraphicsProgram {
 	 * @return determine whether turn is over or not.
 	 */
 	private boolean isEndOfTurn() {
-		return ball.getY() > paddle.getY();
+		return ball.getY() > APPLICATION_HEIGHT;
 	}
 
 	/**
@@ -308,12 +324,14 @@ public class Breakout extends GraphicsProgram {
 	}
 
 	/* Private instance variables */
-	private GPaddle paddle;
+	private GRect paddle;
 	private GOval ball;
+	private GBoard scoreBoard;
 	private int nBricks;
 	/* Random number generator used to specifies origin point */
 	private RandomGenerator rgen = RandomGenerator.getInstance();
 	private double vx, vy; // The velocity of the ball
 	private double ballSpeed; // The speed of the bounce ball
 	private int turns = 3; // Turns of the game
+	private int score = 0;
 }

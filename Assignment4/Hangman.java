@@ -54,15 +54,17 @@ public class Hangman extends ConsoleProgram {
 	 * Initial the game
 	 */
 	private void initGame() {
+		// Reset canvas
+		canvas.reset();
 		// A random integer generator.
 		RandomGenerator rg = RandomGenerator.getInstance();
 		word = lexicon.getWord(rg.nextInt(10));
-		dashLine = initDashLine(word);
+		secretWord = initDashLine(word);
 		numberOfWrongGuess = 0;
 	}
 
 	private void printState() {
-		println("The word now looks like this: " + dashLine);
+		println("The word now looks like this: " + secretWord);
 		int remainChance = NUMBER_OF_CHANCE - numberOfWrongGuess;
 		println("You have " + remainChance + " guesses left.");
 	}
@@ -93,18 +95,20 @@ public class Hangman extends ConsoleProgram {
 		if (indexOfChar != -1) {
 			for (int i = 0; i < word.length(); i++) {
 				if (word.charAt(i) == guess) {
-					dashLine = dashLine.substring(0, i) + guess + dashLine.substring(i + 1);
+					secretWord = secretWord.substring(0, i) + guess + secretWord.substring(i + 1);
 				}
 			}
+			canvas.displayWord(secretWord);
 			println("That guess is correct.");
 		} else {
 			println("There are no " + guess + "'s in the word.");
 			numberOfWrongGuess++;
+			canvas.noteIncorrectGuess(guess);
 		}
 	}
 
 	private boolean isWin() {
-		return !dashLine.contains("-");
+		return secretWord == word;
 	}
 
 	private boolean isLose() {
@@ -124,7 +128,7 @@ public class Hangman extends ConsoleProgram {
 
 	/* Private instance variables */
 	private HangmanLexicon lexicon = new HangmanLexicon();
-	private String dashLine;
+	private String secretWord;
 	private String word;
 	private int numberOfWrongGuess;
 	private static final int NUMBER_OF_CHANCE = 8;

@@ -30,7 +30,6 @@ public class Hangman extends ConsoleProgram {
 		/* You fill this in */
 		println("Welcome to Hangman!");
 		initGame();
-		println(word);
 		while (true) {
 			if (isWin()) {
 				winPrint();

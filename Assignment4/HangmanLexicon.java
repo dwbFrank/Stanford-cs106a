@@ -17,8 +17,8 @@ public class HangmanLexicon {
 	// This is the HangmanLexicon constructor
 	public HangmanLexicon() {
 		// your initialization code goes here
+		ArrayList<String> words = new ArrayList<String>();
 		try {
-			ArrayList<String> words = new ArrayList<String>();
 			BufferedReader rd = new BufferedReader(new FileReader("HangmanLexicon.txt"));
 			String word = null;
 			while (true) {

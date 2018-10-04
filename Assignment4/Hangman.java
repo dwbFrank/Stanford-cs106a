@@ -30,6 +30,7 @@ public class Hangman extends ConsoleProgram {
 		/* You fill this in */
 		println("Welcome to Hangman!");
 		initGame();
+		println(word);
 		while (true) {
 			if (isWin()) {
 				winPrint();
@@ -58,7 +59,7 @@ public class Hangman extends ConsoleProgram {
 		canvas.reset();
 		// A random integer generator.
 		RandomGenerator rg = RandomGenerator.getInstance();
-		word = lexicon.getWord(rg.nextInt(10));
+		word = lexicon.getWord(rg.nextInt(lexicon.getWordCount()));
 		secretWord = initDashLine(word);
 		numberOfWrongGuess = 0;
 	}

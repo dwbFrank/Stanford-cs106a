@@ -27,6 +27,7 @@ public class HangmanLexicon {
 					break;
 				words.add(word);
 			}
+			rd.close();
 			lexicon = new String[words.size()];
 			for (int i = 0; i < lexicon.length; i++) {
 				lexicon[i] = words.get(i);
